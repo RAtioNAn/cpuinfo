@@ -132,8 +132,7 @@ int main(int argc, const char * argv[]) {
         if (res == 0) {
             print_data(queries[i].format, (void *) queries[i].data, queries[i].type);
         } else {
-            printf("Oops!.. Something went completely wrong.");
-            exit(res);
+            continue;
         }
     }
 
