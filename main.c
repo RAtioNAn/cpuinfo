@@ -3,20 +3,24 @@
 #include <sys/sysctl.h>
 #include <inttypes.h>
 
+#ifndef QUERIES_SIZE
+#define QUERIES_SIZE 11
+#endif
+
 void print_data(const char *format, const void *data, const short type) {
 
     switch (type) {
-        case 1 : { // char * case
+        case 1 : {
             char *str = (char *) data;
             printf(format, str);
         };
             break;
-        case 2: { // int32_t case
+        case 2: {
             int32_t *dt = (int32_t *) data;
             printf(format, *dt);
         };
             break;
-        case 3: { // int64_t case
+        case 3: {
             int64_t *dt = (int64_t *) data;
             printf(format, *dt);
         };
@@ -26,28 +30,28 @@ void print_data(const char *format, const void *data, const short type) {
             exit(-1);
         }
     }
-
-    return;
+    
 }
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char *argv[]) {
 
-    struct Record {
+    typedef struct Record {
         char *query;
         void *data;
         size_t length;
         char *format;
         short type;
-    };
+    } query_record_t;
 
-    char string_buf[1000];
-    size_t string_buf_len = 1000;
+    char *string_buf = NULL;
+    size_t string_buf_len = 0;
     int32_t int32_buf;
     size_t int32_buf_len = sizeof(int32_buf);
     int64_t int64_buf;
     size_t int64_buf_len = sizeof(int64_buf);
 
-    struct Record queries[11] = {
+
+    query_record_t queries[QUERIES_SIZE] = {
             {
                     "hw.machine",
                     string_buf,
@@ -127,12 +131,28 @@ int main(int argc, const char * argv[]) {
             }
     };
 
-    for (int i = 0; i < 11; i++) {
-        int res = sysctlbyname(queries[i].query, queries[i].data, &(queries[i].length), NULL, 0);
-        if (res == 0) {
-            print_data(queries[i].format, (void *) queries[i].data, queries[i].type);
+    for (int i = 0; i < QUERIES_SIZE; i++) {
+        if (queries[i].type == 1) {
+            int sizeSyscall = sysctlbyname(queries[i].query, NULL, &(queries[i].length), NULL, 0);
+            if (sizeSyscall == 0) {
+                queries[i].data = malloc(queries[i].length);
+                int querySyscall = sysctlbyname(queries[i].query, queries[i].data, &(queries[i].length), NULL, 0);
+                if (querySyscall == 0) {
+                    print_data(queries[i].format, (void *) queries[i].data, queries[i].type);
+                } else {
+                    continue;
+                }
+                free(queries[i].data);
+            } else {
+                continue;
+            }
         } else {
-            continue;
+            int res = sysctlbyname(queries[i].query, queries[i].data, &(queries[i].length), NULL, 0);
+            if (res == 0) {
+                print_data(queries[i].format, (void *) queries[i].data, queries[i].type);
+            } else {
+                continue;
+            }
         }
     }
 
