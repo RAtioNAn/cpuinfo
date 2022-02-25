@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/sysctl.h>
+#include <mach/machine.h>
 #include <inttypes.h>
 
 #ifndef QUERIES_SIZE
-#define QUERIES_SIZE 11
+#define QUERIES_SIZE 14
 #endif
 
 void print_data(const char *format, const void *data, const short type) {
@@ -30,7 +31,7 @@ void print_data(const char *format, const void *data, const short type) {
             exit(-1);
         }
     }
-    
+
 }
 
 int main(int argc, const char *argv[]) {
@@ -45,11 +46,12 @@ int main(int argc, const char *argv[]) {
 
     char *string_buf = NULL;
     size_t string_buf_len = 0;
-    int32_t int32_buf;
+    int32_t int32_buf = 0;
     size_t int32_buf_len = sizeof(int32_buf);
-    int64_t int64_buf;
+    int64_t int64_buf = 0;
     size_t int64_buf_len = sizeof(int64_buf);
 
+    boolean_t error_flag = FALSE;
 
     query_record_t queries[QUERIES_SIZE] = {
             {
@@ -71,6 +73,28 @@ int main(int argc, const char *argv[]) {
                     string_buf,
                     string_buf_len,
                     "Name: %s\n",
+                    1
+            },
+            {
+                    "machdep.cpu.microcode_version",
+                    &int32_buf,
+                    string_buf_len,
+                    "Microcode version: %" PRId32 "\n",
+                    1
+            },
+
+            {
+                "machdep.cpu.stepping",
+                        &int32_buf,
+                        string_buf_len,
+                        "Processor stepping: %" PRId32 "\n",
+                        1
+            },
+            {
+                    "machdep.cpu.features",
+                    string_buf,
+                    string_buf_len,
+                    "CPU features: %s\n",
                     1
             },
             {
@@ -133,17 +157,19 @@ int main(int argc, const char *argv[]) {
 
     for (int i = 0; i < QUERIES_SIZE; i++) {
         if (queries[i].type == 1) {
-            int sizeSyscall = sysctlbyname(queries[i].query, NULL, &(queries[i].length), NULL, 0);
-            if (sizeSyscall == 0) {
+            int size_syscall = sysctlbyname(queries[i].query, NULL, &(queries[i].length), NULL, 0);
+            if (size_syscall == 0) {
                 queries[i].data = malloc(queries[i].length);
-                int querySyscall = sysctlbyname(queries[i].query, queries[i].data, &(queries[i].length), NULL, 0);
-                if (querySyscall == 0) {
+                int query_syscall = sysctlbyname(queries[i].query, queries[i].data, &(queries[i].length), NULL, 0);
+                if (query_syscall == 0) {
                     print_data(queries[i].format, (void *) queries[i].data, queries[i].type);
                 } else {
+                    error_flag = TRUE;
                     continue;
                 }
                 free(queries[i].data);
             } else {
+                error_flag = TRUE;
                 continue;
             }
         } else {
@@ -151,9 +177,14 @@ int main(int argc, const char *argv[]) {
             if (res == 0) {
                 print_data(queries[i].format, (void *) queries[i].data, queries[i].type);
             } else {
+                error_flag = TRUE;
                 continue;
             }
         }
+    }
+
+    if (error_flag) {
+        printf("\nThere was a problem fetching info. Some values won`t be displayed.");
     }
 
     return 0;
