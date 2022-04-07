@@ -1,3 +1,3 @@
 # cpuinfo
 
-Cli utility to print CPU info.
+CLI utility to print some CPU info.
