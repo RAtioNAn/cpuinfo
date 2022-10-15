@@ -78,17 +78,17 @@ int main(int argc, const char *argv[]) {
             {
                     "machdep.cpu.microcode_version",
                     &int32_buf,
-                    string_buf_len,
+                    int32_buf_len,
                     "Microcode version: %" PRId32 "\n",
                     1
             },
 
             {
-                "machdep.cpu.stepping",
-                        &int32_buf,
-                        string_buf_len,
-                        "Processor stepping: %" PRId32 "\n",
-                        1
+                    "machdep.cpu.stepping",
+                    &int32_buf,
+                    int32_buf_len,
+                    "Processor stepping: %" PRId32 "\n",
+                    1
             },
             {
                     "machdep.cpu.features",

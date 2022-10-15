@@ -13,3 +13,5 @@ cmake-build-debug/
 .idea/
 *.iml
 /.DS_Store
+/cmake-build-release/
+/.clang-tidy
